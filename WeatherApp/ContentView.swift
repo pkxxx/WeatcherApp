@@ -6,24 +6,41 @@
 //
 
 import SwiftUI
+import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var weatherAPIClient = WeatherAPIClient()
+    
     var body: some View {
-      
         VStack(alignment: .center, spacing: 10) {
             Spacer()
-            HStack(alignment: .center, spacing: 16) {
-                Image(systemName: "sun.max.fill")
-                    .font(.largeTitle)
-                Text("24º")
-                    .font(.largeTitle)
+            if let currentWeather = weatherAPIClient.currentWeather  {
+                HStack(alignment: .center, spacing: 16) {
+                    currentWeather.weatherCode.image
+                        .font(.largeTitle)
+                    Text("\(currentWeather.temperature)º")
+                        .font(.largeTitle)
+                }
+                Text(currentWeather.weatherCode.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("No weather info available yet.\nTap on refresh to fetch new data.\nMake sure you have enabled location permissions for the app.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                Button("Refresh", action: {
+                    Task {
+                        await weatherAPIClient.fetchWeather()
+                    }
+                })
             }
-            Text("Sunny outside.\nDon't forget your hat!xxxx")
-                .font(.body)
-                .multilineTextAlignment(.center)
             Spacer()
         }
-        .padding()
+        .onAppear {
+            Task {
+                await weatherAPIClient.fetchWeather()
+            }
+        }
     }
 }
 
@@ -32,3 +49,5 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+//https://api.tomorrow.io/v4/timelines?location=40.7579787,-73.9877313&fields=temperature&fields=weatherCode&units=metric&timesteps=1h&startTime=2023-04-11T14:00:11Z&endTime=2023-04-11T15:00:11Z&apikey=iwHcW25MqohoMT9jLMB8T9ZAxBD9HX45
